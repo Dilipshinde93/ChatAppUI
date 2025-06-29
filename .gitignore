@@ -31,3 +31,9 @@
 *.props
 *.targets
 *.cache
+/FriendsChatUI/bin/Debug/net8.0
+/FriendsChatUI/obj/Debug/net8.0/ref
+/FriendsChatUI/obj/Debug/net8.0/refint
+/FriendsChatUI/obj/Debug/net8.0/scopedcss/bundle
+/FriendsChatUI/obj/Debug/net8.0/scopedcss/projectbundle
+/FriendsChatUI/obj/Debug/net8.0
