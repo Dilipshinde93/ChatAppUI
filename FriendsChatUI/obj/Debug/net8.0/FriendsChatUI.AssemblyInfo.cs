@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FriendsChatUI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9205fcc9969421ffb256956ef222a675c913047a")]
 [assembly: System.Reflection.AssemblyProductAttribute("FriendsChatUI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FriendsChatUI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

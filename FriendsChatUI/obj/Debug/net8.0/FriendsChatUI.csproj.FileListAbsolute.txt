@@ -493,3 +493,4 @@ C:\Users\admin\source\repos\FriendsChatUI\FriendsChatUI\obj\Debug\net8.0\refint\
 C:\Users\admin\source\repos\FriendsChatUI\FriendsChatUI\obj\Debug\net8.0\FriendsChatUI.pdb
 C:\Users\admin\source\repos\FriendsChatUI\FriendsChatUI\obj\Debug\net8.0\FriendsChatUI.genruntimeconfig.cache
 C:\Users\admin\source\repos\FriendsChatUI\FriendsChatUI\obj\Debug\net8.0\ref\FriendsChatUI.dll
+C:\Users\admin\source\repos\FriendsChatUI\FriendsChatUI\obj\Debug\net8.0\FriendsChatUI.sourcelink.json
