@@ -43,3 +43,6 @@ dist/
 # Ignore others
 *.vspscc
 *.vssscc
+*.vs
+*.db
+*.vsidx
