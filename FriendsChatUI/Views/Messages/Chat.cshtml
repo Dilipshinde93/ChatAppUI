@@ -1,0 +1,144 @@
+﻿@{
+    ViewBag.Title = "Chat with Friend";
+    var friendId = ViewBag.FriendId;
+    var friendName = ViewBag.FriendName ?? "Friend";
+    var friendImage = ViewBag.FriendImage ?? Url.Content("~/images/default-profile.png");
+    var jwtToken = Context.Session.GetString("JwtToken");
+    var currentUserId = Guid.Parse(Context.Session.GetString("UserId"));
+    var currentUserName = Context.Session.GetString("Name") ?? "You";
+}
+
+
+<div class="chat-wrapper">
+    <div class="chat-container">
+        <div class="container mt-4">
+            <div class="chat-header mb-3">
+                <h4 class="mb-0">💬 Chat with</h4>
+                <img src="@friendImage" alt="Friend Profile" />
+                <h4 class="text-primary mb-0">@friendName</h4>
+            </div>
+
+            <a class="btn btn-outline-secondary mb-3" href="@Url.Action("Index", "Messages")">⬅️ Back to Friends</a>
+
+            <div id="chatBox" class="chat-box"></div>
+
+            <!-- Text input -->
+            <div class="chat-input input-group mb-3">
+                <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." />
+                <button type="button" id="sendBtn" class="btn btn-success">📤 Send</button>
+            </div>
+
+            <!-- File upload -->
+            <form method="post" enctype="multipart/form-data" asp-action="UploadMedia" asp-controller="Messages">
+                <input type="hidden" name="friendId" value="@friendId" />
+                <div class="input-group">
+                    <input type="file" name="file" class="form-control" />
+                    <button type="submit" class="btn btn-secondary">Upload Media</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.0/signalr.min.js"></script>
+<script>
+    const currentUserId = "@currentUserId"; // Guid string
+    const currentUserName = "@currentUserName";
+    const friendId = "@friendId";
+    const jwtToken = "@jwtToken";
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("https://localhost:44350/chatHub", {
+            accessTokenFactory: () => jwtToken,
+            withCredentials: true
+        })
+        .build();
+
+    connection.start().then(() => {
+        console.log("tring to load history");
+        loadChatHistory();
+    }).catch(err => console.error("❌ SignalR error:", err.toString()));
+
+    async function loadChatHistory() {
+        try {
+            const res = await fetch(`/Messages/GetChatHistory?friendId=${friendId}`, {
+                headers: { Authorization: `Bearer ${jwtToken}` }
+            });
+            if (!res.ok) throw new Error("History fetch failed");
+            const messages = await res.json();
+            messages.forEach(renderMessage);
+        } catch (err) {
+            console.error("❌ Error loading history:", err);
+        }
+    }
+
+        function renderMessage(message) {
+        const chatBox = document.getElementById("chatBox");
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("d-flex", "mb-2");
+
+        const div = document.createElement("div");
+        div.classList.add("message");
+
+        const isMe = (message.fromUser || "").toLowerCase() === currentUserId.toLowerCase();
+        if (isMe) {
+            wrapper.classList.add("justify-content-end");
+            div.classList.add("from-me");
+        } else {
+            wrapper.classList.add("justify-content-start");
+            div.classList.add("from-friend");
+            connection.invoke("MarkAsRead", message.messageId || message.id).catch(console.error);
+        }
+
+        if (message.message) {
+            div.innerHTML = `<span>${message.message}</span>`;
+        } else if (message.mediaUrl && message.mediaType === "image") {
+            div.innerHTML = `<img src="${message.mediaUrl}" class="img-fluid rounded mt-2" style="max-width: 200px;" />`;
+        } else if (message.mediaUrl) {
+            div.innerHTML = `<a href="${message.mediaUrl}" target="_blank">📎 Download File</a>`;
+        }
+
+        const ticks = (() => {
+                const raw = message.status;
+                const status = typeof raw === "number" ?
+                    ["Sent", "Delivered", "Read"][raw] : raw;
+                if (status === "Read") return '<span style="color:dodgerblue;">✅✅✅</span>';
+                if (status === "Delivered") return '✅✅';
+                if (status === "Sent") return '✅';
+                return '';
+        })();
+
+        const timeDiv = document.createElement("div");
+        timeDiv.classList.add("timestamp");
+
+        timeDiv.innerHTML = new Date(message.timestamp).toLocaleString() +
+            (isMe ? ` <span class="status-tick">${ticks}</span>` : '');
+
+        div.appendChild(timeDiv);
+        wrapper.appendChild(div);
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    connection.on("ReceiveMessage", (message) => {
+        renderMessage(message);
+    });
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
+        if (!message) return;
+
+        connection.invoke("SendMessage", friendId, message, currentUserName)
+            .catch(err => console.error("❌ SendMessage failed:", err.toString()));
+
+        input.value = "";
+    });
+
+    document.getElementById("messageInput").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById("sendBtn").click();
+        }
+    });
+</script>

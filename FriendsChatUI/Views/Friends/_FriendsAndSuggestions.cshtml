@@ -1,0 +1,92 @@
+﻿@model FriendsAndSuggestionsViewModel
+
+@{
+    var pendingRequests = ViewBag.PendingRequests as List<FriendRequestDto> ?? new();
+    var pendingUserIds = pendingRequests.Select(r => r.FromUserId).ToHashSet();
+}
+
+<!-- 🔔 Friend Requests Section -->
+@if (pendingRequests.Any())
+{
+    <h3>🔔 Friend Requests</h3>
+    <ul class="list-group mb-4">
+        @foreach (var req in pendingRequests)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <img src="@req.ProfileImageUrl" class="profile-image-sm" />
+                    @req.Name
+                </div>
+                <div class="d-flex gap-2">
+                    <form asp-action="AcceptRequest" method="post">
+                        <input type="hidden" name="requestId" value="@req.Id" />
+                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                    </form>
+                    <form asp-action="RejectRequest" method="post">
+                        <input type="hidden" name="requestId" value="@req.Id" />
+                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                    </form>
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+<!-- 👥 Your Friends Section -->
+<h3>👥 Your Friends</h3>
+@if (Model.Friends.Any())
+{
+    <ul class="list-group">
+        @foreach (var user in Model.Friends)
+        {
+            <li class="list-group-item">
+                <img src="@user.ProfileImageUrl" class="profile-image-sm" />
+                @user.FullName
+                <span>✅ Friend</span>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No friends found.</p>
+}
+
+<hr />
+
+<!-- ✨ People You May Know Section -->
+<h4>✨ People You May Know</h4>
+@{
+    var filteredSuggestions = Model.Suggestions
+        .Where(u => !pendingUserIds.Contains(u.Id))
+        .ToList();
+}
+@if (filteredSuggestions.Any())
+{
+    <ul class="list-group">
+        @foreach (var user in filteredSuggestions)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <img src="@user.ProfileImageUrl" class="profile-image-sm" />
+                    @user.FullName
+                </div>
+                @if (user.RequestSent)
+                {
+                    <span class="badge bg-warning text-dark">Request Sent</span>
+                }
+                else
+                {
+                    <form asp-action="SendRequest" method="post">
+                        <input type="hidden" name="toUserId" value="@user.Id" />
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Add Friend</button>
+                    </form>
+                }
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No friend suggestions found.</p>
+}

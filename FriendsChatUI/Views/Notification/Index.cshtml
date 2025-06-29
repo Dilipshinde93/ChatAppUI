@@ -1,0 +1,125 @@
+﻿@model List<Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "_Layout";
+    var jwtToken = Context.Session.GetString("JwtToken") ?? "";
+}
+
+<h3 class="mb-3">🔔 Notifications</h3>
+<a href="/Dashboard/Index" class="btn btn-secondary mb-3">⬅ Back to Dashboard</a>
+
+<!-- ✅ Mark All as Read Button -->
+<button id="markAllBtn" class="btn btn-primary mb-4">✅ Mark All as Read</button>
+
+<div id="notificationList">
+    @foreach (var n in Model.OrderByDescending(x => x.CreatedAt))
+    {
+        <div class="alert @(n.IsRead ? "alert-secondary" : "alert-info") d-flex justify-content-between align-items-center notification-item" data-id="@n.Id">
+            <div>
+                <h6>
+                    @switch (n.Type)
+                    {
+                        case NotificationType.FriendRequest:
+                            <text><i class="fa fa-user-plus text-primary"></i> Friend Request</text>
+                            break;
+                        case NotificationType.Message:
+                            <text><i class="fa fa-envelope text-success"></i> New Message</text>
+                            break;
+                        case NotificationType.FriendSuggestion:
+                            <text><i class="fa fa-users text-warning"></i> Friend Suggestion</text>
+                            break;
+                        default:
+                            <text><i class="fa fa-bell text-secondary"></i> Notification</text>
+                            break;
+                    }
+                </h6>
+                <p class="mb-1">@n.Message</p>
+                <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("g")</small>
+            </div>
+
+            @if (!n.IsRead)
+            {
+                <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="@n.Id">Mark as Read</button>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const jwtToken = "@jwtToken";
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:44350/notificationsHub", {
+                accessTokenFactory: () => jwtToken
+            }).build();
+
+        connection.on("ReceiveNotification", function (notification) {
+            const iconMap = {
+                "FriendRequest": "fa-user-plus text-primary",
+                "Message": "fa-envelope text-success",
+                "FriendSuggestion": "fa-users text-warning"
+            };
+
+            const icon = iconMap[notification.type] || "fa-bell text-secondary";
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "alert alert-info d-flex justify-content-between align-items-center notification-item";
+            wrapper.setAttribute("data-id", notification.id);
+
+            wrapper.innerHTML = `
+                <div>
+                    <h6><i class="fa ${icon}"></i> ${notification.type.replace(/([a-z])([A-Z])/g, '$1 $2')}</h6>
+                    <p class="mb-1">${notification.message}</p>
+                    <small class="text-muted">${new Date(notification.createdAt).toLocaleString()}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="${notification.id}">Mark as Read</button>
+            `;
+
+            document.getElementById("notificationList").prepend(wrapper);
+        });
+
+        connection.start().then(() => {
+            // ✅ Bind individual "Mark as Read" buttons
+            document.querySelectorAll(".mark-read-btn").forEach(button => {
+                button.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    connection.invoke("MarkAsRead", id)
+                        .then(() => {
+                            const parent = this.closest(".notification-item");
+                            parent.classList.remove("alert-info");
+                            parent.classList.add("alert-secondary");
+                            this.textContent = "Marked";
+                            this.classList.remove("btn-outline-primary");
+                            this.classList.add("btn-outline-success");
+                            this.disabled = true;
+                        })
+                        .catch(err => console.error("❌ MarkAsRead failed:", err));
+                });
+            });
+
+            // ✅ Bind "Mark All as Read" button
+            document.getElementById("markAllBtn").addEventListener("click", function () {
+                connection.invoke("MarkAllRead")
+                    .then(() => {
+                        document.querySelectorAll(".notification-item").forEach(item => {
+                            item.classList.remove("alert-info");
+                            item.classList.add("alert-secondary");
+
+                            const btn = item.querySelector(".mark-read-btn");
+                            if (btn) {
+                                btn.textContent = "Marked";
+                                btn.classList.remove("btn-outline-primary");
+                                btn.classList.add("btn-outline-success");
+                                btn.disabled = true;
+                            }
+                        });
+                        this.disabled = true;
+                    })
+                    .catch(err => console.error("❌ MarkAllRead failed:", err));
+            });
+
+        }).catch(err => console.error("❌ SignalR connection error:", err));
+    </script>
+}

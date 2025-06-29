@@ -1,0 +1,65 @@
+﻿@model List<Post>
+
+<h4 class="mb-3">📢 Post Something</h4>
+<form asp-controller="Feed" asp-action="Create" method="post" enctype="multipart/form-data" class="mb-4">
+    <textarea name="content" class="form-control mb-2" placeholder="What's on your mind?" rows="3"></textarea>
+    <input type="file" name="image" class="form-control mb-2" />
+    <button type="submit" class="btn btn-primary">Post</button>
+</form>
+
+<h4 class="mb-3">📰 Recent Posts</h4>
+@if (Model != null)
+{
+    foreach (var post in Model)
+    {
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <p class="mb-1">@post.Content</p>
+
+                @if (!string.IsNullOrEmpty(post.ImageUrl))
+                {
+                    <img src="@($"https://localhost:44372{post.ImageUrl}")"
+                         class="img-fluid rounded mb-2"
+                         style="max-height: 300px;" />
+                }
+
+                <div class="d-flex align-items-center gap-3 mt-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary like-btn" data-post-id="@post.Id">
+                        👍 Like
+                    </button>
+                    <span class="text-muted">@((post.Likes?.Count ?? 0) + " Likes")</span>
+
+                    @if (post.Comments?.Any() == true)
+                    {
+                        <button class="btn btn-sm btn-outline-secondary toggle-comments" data-post-id="@post.Id">
+                            💬 View Comments (@(post.Comments.Count))
+                        </button>
+                    }
+                </div>
+
+                <form class="comment-form d-flex mb-2" data-post-id="@post.Id">
+                    <input type="text" name="text" class="form-control form-control-sm me-2" placeholder="Write a comment..." />
+                    <button type="submit" class="btn btn-sm btn-secondary">💬</button>
+                </form>
+
+                @if (post.Comments?.Any() == true)
+                {
+                    <div class="bg-light p-2 rounded small comments-section" id="comments-@post.Id" style="display: none;">
+                        <strong>Comments:</strong>
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var comment in post.Comments)
+                            {
+                                <li class="border-bottom py-1">
+                                    @comment.Text
+                                    <small class="text-muted">(@comment.CreatedAt.ToLocalTime())</small>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <small class="text-muted d-block mt-2">@post.CreatedAt.ToLocalTime()</small>
+            </div>
+        </div>
+    }
+}

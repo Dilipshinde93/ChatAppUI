@@ -1,0 +1,17 @@
+﻿@model List<FriendRequest>
+@{
+    ViewBag.Title = "Friend Requests";
+}
+
+<h2>Pending Friend Requests</h2>
+
+@foreach (var req in Model)
+{
+    <div class="card p-2 mb-2">
+        <p><strong>From:</strong> @req.FromUserId</p>
+        <form asp-action="Accept" method="post">
+            <input type="hidden" name="id" value="@req.Id" />
+            <button type="submit" class="btn btn-success">Accept</button>
+        </form>
+    </div>
+}

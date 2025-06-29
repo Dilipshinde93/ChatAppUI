@@ -1,0 +1,108 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var fullName = HttpContextAccessor.HttpContext.Session.GetString("FullName") ?? "User";
+    var profileImage = HttpContextAccessor.HttpContext.Session.GetString("ProfileImageUrl") ?? Url.Content("~/images/default-profile.png");
+    var isLoggedIn = !string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JwtToken"));
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - FriendsChatUI</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/FriendsChatUI.styles.css" asp-append-version="true" />
+    <style>
+        .dropdown:hover .dropdown-menu {display: block;}
+        .dropdown-toggle::after {display: none;}
+        .profile-wrapper {position: relative;display: inline-block;}
+        .profile-image {width: 40px;height: 40px;object-fit: cover; border-radius: 50%;}
+        .view-profile-tooltip {display: none;position: absolute;top: 110%;left: 50%;transform: translateX(-50%);background-color: white;
+            border: 1px solid #ddd;padding: 5px 10px;border-radius: 6px;white-space: nowrap;box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Dashboard" asp-action="Index">FriendsChatUI</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+
+                    @if (isLoggedIn)
+                    {
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="profile-wrapper" id="profileWrapper">
+                                <img src="@profileImage" class="profile-image" alt="Profile" />
+                                <div id="viewProfileHover" class="view-profile-tooltip">
+                                    <a href="/Profile/Index" class="text-dark text-decoration-none">👤 View Profile</a>
+                                </div>
+                            </div>
+
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    👤 @fullName
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                                    <li><a class="dropdown-item text-danger" href="/Account/Logout">🚪 Logout</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-4">
+        <div class="container">
+            &copy; 2025 - FriendsChatUI - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        const wrapper = document.getElementById('profileWrapper');
+        const hoverBox = document.getElementById('viewProfileHover');
+        let hoverTimeout;
+
+        wrapper.addEventListener('mouseenter', () => {
+            clearTimeout(hoverTimeout);
+            hoverBox.style.display = 'block';
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            hoverTimeout = setTimeout(() => {
+                hoverBox.style.display = 'none';
+            }, 500); // Delay before hiding
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

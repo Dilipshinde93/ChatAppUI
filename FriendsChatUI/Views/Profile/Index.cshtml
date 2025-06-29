@@ -1,0 +1,96 @@
+﻿@model FriendsChatUI.Models.UserProfile
+@{
+    ViewBag.Title = "My Profile";
+}
+
+<h2>Profile</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <img id="previewImg"
+             src="@(!string.IsNullOrEmpty(Model.ProfileImageUrl) ? Model.ProfileImageUrl : "/images/default-user.png")"
+             class="img-thumbnail mb-3"
+             style="width: 100%; object-fit: cover;" />
+    </div>
+    <div class="col-md-8">
+        <form id="profileUpdateForm" enctype="multipart/form-data">
+            <div class="mb-2">
+                <label>Full Name</label>
+                <input class="form-control" name="fullName" value="@Model.FullName" />
+            </div>
+            <div class="mb-2">
+                <label>Bio</label>
+                <textarea class="form-control" name="bio">@Model.Bio</textarea>
+            </div>
+            <div class="mb-2">
+                <label>Change Profile Picture</label>
+                <input type="file" name="image" id="imageInput" class="form-control" accept="image/*" />
+            </div>
+            <input type="hidden" id="existingImageUrl" value="@Model.ProfileImageUrl" />
+            <button type="submit" class="btn btn-success">Update</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const jwtToken = "@Context.Session.GetString("JwtToken")";
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:44350/profileHub", {
+                accessTokenFactory: () => jwtToken,
+                withCredentials: true
+            }).build();
+
+        connection.on("ProfileUpdated", function (data) {
+            console.log("✅ Profile updated:", data);
+            alert("Profile updated successfully!");
+        });
+
+        connection.start().then(() => {
+            console.log("✅ Connected to ProfileHub");
+
+            $("#profileUpdateForm").on("submit", function (e) {
+                e.preventDefault();
+
+                const fullName = $("input[name='fullName']").val();
+                const bio = $("textarea[name='bio']").val();
+                const fileInput = document.getElementById("imageInput");
+                const existingImageUrl = $("#existingImageUrl").val();
+
+                if (fileInput.files.length === 0) {
+                    sendProfile(fullName, bio, existingImageUrl); // keep existing image
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const imageData = e.target.result;
+                        sendProfile(fullName, bio, imageData);
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+            });
+
+            function sendProfile(fullName, bio, imageUrl) {
+                connection.invoke("UpdateProfile", fullName, bio, imageUrl)
+                    .then(() => {
+                        $("#previewImg").attr("src", imageUrl);
+                        console.log("🔄 Profile sent to hub.");
+                    })
+                    .catch(err => console.error("❌ Error updating profile:", err));
+            }
+
+            // Preview selected image immediately
+            document.getElementById("imageInput").addEventListener("change", function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        document.getElementById("previewImg").src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }).catch(err => console.error("❌ SignalR connection failed:", err));
+    </script>
+}

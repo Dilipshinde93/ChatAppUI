@@ -1,0 +1,29 @@
+﻿@model List<UserDto>
+@{
+    ViewBag.Title = "Messages";
+}
+
+<div class="d-flex justify-content-center mt-4">
+    <!-- Flex container to center content -->
+    <div class="chat-sidebar">
+        <h4 class="mb-3 text-primary text-center">💬 Messenger</h4>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-muted text-center">No friends available for chat.</div>
+        }
+        else
+        {
+            @foreach (var friend in Model)
+            {
+                <div class="chat-friend">
+                    <div class="chat-friend-left">
+                        <img src="@friend.ProfileImageUrl" alt="Profile" />
+                        <div class="name">@friend.FullName</div>
+                    </div>
+                    <a href="@Url.Action("Chat", "Messages", new { friendId = friend.Id })" class="chat-button">Message</a>
+                </div>
+            }
+        }
+    </div>
+</div>

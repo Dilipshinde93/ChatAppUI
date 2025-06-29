@@ -1,0 +1,79 @@
+﻿@model List<UserDto>
+@{
+    var pendingRequests = ViewBag.PendingRequests as List<FriendRequestDto>;
+}
+
+<div class="card p-3 mb-3">
+    <h5 class="mb-3">🧾 Friend Requests</h5>
+    @if (pendingRequests != null && pendingRequests.Any())
+    {
+        <ul class="list-group mb-4">
+            @foreach (var request in pendingRequests)
+            {
+                var isAlreadyFriend = Model.Any(u => u.Id == request.Id && u.IsFriend);
+
+                if (isAlreadyFriend)
+                {
+                    continue; // ✅ Skip rendering this request
+                }
+
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        @if (!string.IsNullOrEmpty(request.ProfileImageUrl))
+                        {
+                            <img src="@($"https://localhost:44372{request.ProfileImageUrl}")" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
+                        }
+                        <strong>@request.Name</strong>
+                    </div>
+                    <div>
+                        <form asp-controller="Friends" asp-action="AcceptRequest" method="post" class="d-inline">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button class="btn btn-sm btn-success accept-btn" data-id="@request.Id">✅ Accept</button>
+                        </form>
+                        <form asp-controller="Friends" asp-action="RejectRequest" method="post" class="d-inline ms-2">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button class="btn btn-sm btn-danger reject-btn" data-id="@request.Id">❌ Reject</button>
+                        </form>
+                    </div>
+                </li>
+            }
+
+        </ul>
+    }
+    else
+    {
+        <p class="text-muted">No pending friend requests.</p>
+    }
+
+    <h5 class="mt-4">👥 All Users</h5>
+    <ul class="list-group list-group-flush">
+        @foreach (var user in Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    @if (!string.IsNullOrEmpty(user.ProfileImageUrl))
+                    {
+                        <img src="@($"https://localhost:44372{user.ProfileImageUrl}")" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
+                    }
+                    <span>@user.Name</span>
+                </div>
+
+                @if (user.IsFriend)
+                {
+                    <span class="badge bg-success">Friend</span>
+                }
+                else if (user.RequestSent)
+                {
+                    <span class="badge bg-warning text-dark">Request Sent</span>
+                }
+                else
+                {
+                    <form asp-controller="Friends" asp-action="SendRequest" method="post" class="m-0">
+                        <input type="hidden" name="toUserId" value="@user.Id" />
+                        <button class="btn btn-sm btn-outline-primary">Add Friend</button>
+                    </form>
+                }
+            </li>
+        }
+    </ul>
+</div>
