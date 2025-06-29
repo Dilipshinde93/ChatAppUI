@@ -6,6 +6,7 @@ obj/
 *.pdb
 *.cache
 *.log
+*.db
 
 # Ignore user-specific files
 *.user
@@ -43,3 +44,4 @@ dist/
 # Ignore others
 *.vspscc
 *.vssscc
+*.vs
